@@ -1,0 +1,87 @@
+FICHIER Tests/Our/triplecond.gen : 
+
+   1  reserver       14
+   3  lirebool  
+   4  affecterg       0
+   6  lirebool  
+   7  affecterg       1
+   9  lirebool  
+  10  affecterg       2
+  12  lirebool  
+  13  affecterg       3
+  15  lirebool  
+  16  affecterg       4
+  18  lirebool  
+  19  affecterg       5
+  21  lirebool  
+  22  affecterg       6
+  24  lirebool  
+  25  affecterg       7
+  27  lirebool  
+  28  affecterg       8
+  30  lirebool  
+  31  affecterg       9
+  33  lirebool  
+  34  affecterg      10
+  36  lirebool  
+  37  affecterg      11
+  39  lirebool  
+  40  affecterg      12
+  42  lirebool  
+  43  affecterg      13
+  45  contenug        0
+  47  bsifaux        54
+  49  empiler         1
+  51  ecrbool   
+  52  bincond       145
+  54  contenug        1
+  56  bsifaux        63
+  58  empiler         2
+  60  ecrbool   
+  61  bincond       145
+  63  contenug        2
+  65  bsifaux        76
+  67  contenug        6
+  69  bsifaux        74
+  71  empiler         4
+  73  ecrbool   
+  74  bincond       145
+  76  contenug        4
+  78  bsifaux        98
+  80  contenug        7
+  82  bsifaux        89
+  84  empiler         5
+  86  ecrbool   
+  87  bincond        96
+  89  contenug        8
+  91  bsifaux        96
+  93  empiler         6
+  95  ecrbool   
+  96  bincond       145
+  98  contenug        5
+ 100  bsifaux       118
+ 102  contenug        9
+ 104  bsifaux       111
+ 106  empiler         7
+ 108  ecrbool   
+ 109  bincond       118
+ 111  contenug       13
+ 113  bsifaux       118
+ 115  empiler         2
+ 117  ecrbool   
+ 118  bincond       145
+ 120  contenug       10
+ 122  bsifaux       129
+ 124  empiler         6
+ 126  ecrbool   
+ 127  bincond       145
+ 129  contenug       11
+ 131  bsifaux       136
+ 133  empiler         7
+ 135  ecrbool   
+ 136  bincond       145
+ 138  contenug       12
+ 140  bsifaux       145
+ 142  empiler         8
+ 144  ecrbool   
+ 145  arret     

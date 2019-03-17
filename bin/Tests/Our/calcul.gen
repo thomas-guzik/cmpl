@@ -1,0 +1,13 @@
+FICHIER Tests/Our/calcul.gen : 
+
+   1  empiler         5
+   3  empiler         5
+   5  add       
+   6  empiler         5
+   8  empiler         5
+  10  mul       
+  11  empiler         5
+  13  div       
+  14  sous      
+  15  ecrent    
+  16  arret     

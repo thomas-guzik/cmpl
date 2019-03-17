@@ -1,0 +1,37 @@
+FICHIER Tests/Our/tripletq.gen : 
+
+   1  reserver        4
+   3  empiler         0
+   5  affecterg       0
+   7  empiler         0
+   9  affecterg       3
+  11  contenug        0
+  13  empiler        10
+  15  inf       
+  16  bsifaux        63
+  18  empiler         0
+  20  affecterg       1
+  22  contenug        1
+  24  empiler        10
+  26  inf       
+  27  bsifaux        61
+  29  empiler         0
+  31  affecterg       2
+  33  contenug        2
+  35  empiler        10
+  37  inf       
+  38  bsifaux        59
+  40  contenug        3
+  42  ecrent    
+  43  contenug        3
+  45  empiler         1
+  47  add       
+  48  affecterg       3
+  50  contenug        2
+  52  empiler         1
+  54  add       
+  55  affecterg       2
+  57  bincond        33
+  59  bincond        22
+  61  bincond        11
+  63  arret     

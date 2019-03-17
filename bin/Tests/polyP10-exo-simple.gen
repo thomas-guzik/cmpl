@@ -1,0 +1,37 @@
+FICHIER Tests/polyP10-exo-simple.gen : 
+
+   1  reserver        5
+   3  lirent    
+   4  affecterg       1
+   6  contenug        1
+   8  affecterg       0
+  10  empiler         0
+  12  affecterg       3
+  14  empiler         0
+  16  affecterg       4
+  18  contenug        0
+  20  empiler         0
+  22  sup       
+  23  bsifaux        55
+  25  lirent    
+  26  affecterg       2
+  28  contenug        3
+  30  contenug        2
+  32  add       
+  33  affecterg       3
+  35  contenug        2
+  37  empiler        -5
+  39  eg        
+  40  bsifaux        46
+  42  empiler         1
+  44  affecterg       4
+  46  contenug        0
+  48  empiler         1
+  50  sous      
+  51  affecterg       0
+  53  bincond        18
+  55  contenug        3
+  57  ecrent    
+  58  contenug        4
+  60  ecrbool   
+  61  arret     

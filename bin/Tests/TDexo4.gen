@@ -1,0 +1,21 @@
+FICHIER Tests/TDexo4.gen : 
+
+   1  reserver        3
+   3  contenug        0
+   5  bsifaux        12
+   7  empiler         1
+   9  ecrbool   
+  10  bincond        33
+  12  contenug        1
+  14  bsifaux        21
+  16  empiler         1
+  18  ecrbool   
+  19  bincond        33
+  21  contenug        2
+  23  bsifaux        30
+  25  empiler         1
+  27  ecrbool   
+  28  bincond        33
+  30  empiler         4
+  32  ecrbool   
+  33  arret     

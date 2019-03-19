@@ -605,6 +605,114 @@ public class PtGen {
 			}
 		break;
 		
+		/* PROCEDURES */
+		
+		// decproc -> 'proc' ident {}
+		case 61:
+			if(presentIdent(bc) != 0) {
+				UtilLex.messErr("Procedure " + UtilLex.repId(UtilLex.numId) + " deja declare");
+			}
+			po.produire(BINCOND);
+			po.produire(0);
+			pileRep.empiler(po.getIpo());
+			placeIdent(UtilLex.numId, PROC, NEUTRE, po.getIpo()+1);
+			placeIdent(-1, PRIVEE, NEUTRE, 0);
+			counterVar = 0;
+			bc = it+1;
+		break;
+		
+		// pf -> type ident {} ( ',' ident {} )*
+		case 62:
+			if(presentIdent(bc) != 0) {
+				UtilLex.messErr("Parametre fixe " + UtilLex.repId(UtilLex.numId) + " deja declare");
+			}
+			placeIdent(UtilLex.numId, PARAMFIXE, tCour, counterVar);
+			counterVar++;
+		break;
+		
+		// pm-> type ident {} ( ',' ident {} )*
+		case 63:
+			if(presentIdent(bc) != 0) {
+				UtilLex.messErr("Parametre modulable " + UtilLex.repId(UtilLex.numId) + " deja declare");
+			} 
+			placeIdent(UtilLex.numId, PARAMMOD, tCour, counterVar);
+			counterVar++;
+		break;
+		
+		// Mise a jour du nombre de param dns tabSymb
+		// decproc -> 'proc' ident parfixe? parmod? {}
+		case 64:
+			tabSymb[it-counterVar].info = counterVar;
+			counterVar += 2;
+		break;
+		
+		/* APPEL PROCEDURE */
+		
+		// AffOuAppel -> ident (... | {} (effixes (effmods)?)? )
+		case 65:
+			if(tabSymb[id_save].categorie != PROC) {
+				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " n'est pas une procedure");
+			}
+			counterVar = 0; // Permet de compter le nombre d'arguement
+		break;
+		
+		// effixes -> '(' (expr {} ( , expr {} )*  )? ')'
+		case 66:
+			if(counterVar >= tabSymb[id_save].info) {
+				UtilLex.messErr("Appel : Le nombre de parametres est trop grand");
+			}
+			if(tabSymb[id_save+counterVar].info != PARAMFIXE) {
+				UtilLex.messErr("Appel : le " + counterVar+1 + " parametre doit etre modulable");
+			}
+			counterVar++;
+		break;
+		
+		// effmods -> '(' (ident {} ( , ident {} )*  )? ')'
+		case 67:
+			if(counterVar >= tabSymb[id_save].info) {
+				UtilLex.messErr("Appel : Le nombre de parametres est trop grand");
+			}
+			if(tabSymb[id_save+counterVar].categorie != PARAMMOD) {
+				UtilLex.messErr("Appel : Le " + counterVar+1 + " parametre doit etre fixe");
+			}
+			
+			a = presentIdent(bc);
+			if (a == 0) {
+				UtilLex.messErr("Appel : " + UtilLex.repId(UtilLex.numId) + " non declare");
+			}
+			if(tabSymb[id_save+counterVar].type != tabSymb[a].type) {
+				UtilLex.messErr("Appel : " + UtilLex.repId(UtilLex.numId) + "n'est pas du bon type");
+			}
+				
+			switch(tabSymb[a].categorie) {
+			case VARGLOBALE:
+				po.produire(EMPILERADG);
+				po.produire(counterVar);
+				break;
+			case VARLOCALE:
+				po.produire(EMPILERADL);
+				po.produire(counterVar);
+				po.produire(0);
+				break;
+			case PARAMMOD:
+				po.produire(EMPILERADL);
+				po.produire(counterVar);
+				po.produire(1);
+				break;
+			default:
+				UtilLex.messErr("Appel : " + UtilLex.repId(UtilLex.numId) + "n'est pas de la bonne categorie");
+			}
+			counterVar++;
+				
+		break;
+		
+		// AffOuAppel -> ident (... | (effixes (effmods)?)? {})
+		case 68:
+			po.produire(APPEL);
+			po.produire(tabSymb[id_save].info);
+			po.produire(counterVar);
+		break;
+		
 		
 		/* FIN & GENERATIONS DU CODE
 		 * corps -> 'debut' instructions 'fin' {}
@@ -634,13 +742,11 @@ public class PtGen {
 				bc = 1;
 			}
 		break;
-		
 
 		default:
 			System.out.println("Point de generation non prevu dans votre liste");
 		break;
 		
-
 		}
 		
 		affMnemoIpo();

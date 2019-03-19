@@ -576,6 +576,7 @@ public class PtGen {
 		break;
 		
 		// inscond -> 'cond' expr : ins,{} expr : ins,{},... ins
+		// inscond -> 'cond' expr : ins,{} expr : ins aut {},... ins
 		// Seulement apres une virgule
 		case 58:
 			po.modifier(pileRep.depiler(), po.getIpo()+3); // maj bsifaux

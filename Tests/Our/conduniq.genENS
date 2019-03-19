@@ -1,0 +1,12 @@
+FICHIER Tests/Our/conduniq.gen : 
+
+   1  reserver        2
+   3  lirebool  
+   4  affecterg       0
+   6  lirebool  
+   7  affecterg       1
+   9  contenug        0
+  11  bsifaux        16
+  13  empiler         1
+  15  ecrent    
+  16  arret     

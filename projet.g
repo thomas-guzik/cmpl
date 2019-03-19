@@ -64,14 +64,14 @@ specif  : ident  ( 'fixe' '(' type  ( ',' type  )* ')' )?
                  ( 'mod'  '(' type  ( ',' type  )* ')' )? 
   ;
   
-consts  : 'const' ( ident '=' valeur  ptvg {PtGen.pt(40);}  )+ 
+consts  : 'const' ( ident '=' valeur  ptvg {PtGen.pt(30);}  )+ 
   ;
   
-vars  : 'var' ( type ident {PtGen.pt(41);} ( ','  ident {PtGen.pt(41);} )* ptvg  )+ {PtGen.pt(42);}
+vars  : 'var' ( type ident {PtGen.pt(31);} ( ','  ident {PtGen.pt(31);} )* ptvg  )+ {PtGen.pt(32);}
   ;
   
-type  : 'ent'  {PtGen.pt(43);}
-  |     'bool' {PtGen.pt(44);}
+type  : 'ent'  {PtGen.pt(33);}
+  |     'bool' {PtGen.pt(34);}
   ;
   
 decprocs: (decproc ptvg)+
@@ -118,21 +118,21 @@ inssi : 'si' expression {PtGen.pt(8);PtGen.pt(50);} 'alors' instructions ('sinon
   
 inscond : 'cond' {PtGen.pt(56);}  expression {PtGen.pt(8);PtGen.pt(57);}  ':' instructions
           (',' {PtGen.pt(58);}  expression {PtGen.pt(8);PtGen.pt(57);} ':' instructions )* 
-          ('aut' {PtGen.pt(59);}   instructions |  ) 
+          ('aut' {PtGen.pt(58);PtGen.pt(59);}   instructions |  ) 
           'fcond'  {PtGen.pt(60);} 
   ;
   
 boucle  : 'ttq' {PtGen.pt(53);}  expression {PtGen.pt(8);PtGen.pt(54);} 'faire' instructions 'fait' {PtGen.pt(55);}
   ;
   
-lecture: 'lire' '(' ident {PtGen.pt(32);}  ( ',' ident  {PtGen.pt(32);} )* ')' 
+lecture: 'lire' '(' ident {PtGen.pt(43);PtGen.pt(42);}  ( ',' ident  {PtGen.pt(43);PtGen.pt(42);} )* ')' 
   ;
   
-ecriture: 'ecrire' '(' expression {PtGen.pt(33);} ( ',' expression {PtGen.pt(33);} )* ')'
+ecriture: 'ecrire' '(' expression {PtGen.pt(44);} ( ',' expression {PtGen.pt(44);} )* ')'
    ;
   
 affouappel
-  : ident  (    ':=' {PtGen.pt(30);}  expression {PtGen.pt(31);}
+  : ident {PtGen.pt(40);} (    ':='  expression {PtGen.pt(41);PtGen.pt(42);}
             |   (effixes (effmods)?)?  
            )
   ;

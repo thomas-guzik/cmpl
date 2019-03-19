@@ -31,7 +31,7 @@ FICHIER Tests/TDexo5-cond.gen :
   49  ecrent    
   50  bincond        64
   52  contenug        4
-  54  bsifaux        59
+  54  bsifaux        61
   56  empiler         4
   58  ecrent    
   59  bincond        64

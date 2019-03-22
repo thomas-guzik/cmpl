@@ -119,7 +119,7 @@ public class PtGen {
 	// counterVar = compte le nb de variable lors de la declarations
 	// tAff = type de la variable a affecter
 	// iAff = placement de la pile de la variable a affecter
-	private static int it, bc, a, counterVar, tAff, id_save;
+	private static int it, bc, a, counter, id_save;
 
 	// utilitaire de recherche de l'ident courant (ayant pour code UtilLex.numId)
 	// dans tabSymb
@@ -143,7 +143,6 @@ public class PtGen {
 		tabSymb[it] = new EltTabSymb(c, cat, t, v);
 	}
 
-	
 	/* DEBUG */
 	// utilitaire d'affichage de la table des symboles
 	//
@@ -166,32 +165,28 @@ public class PtGen {
 		}
 		System.out.println();
 	}
-	
-	private static final String[] inst = { "", "reserver  ", "empiler   ",
-		"contenug  ", "affecterg ", "ou        ", "et        ",
-		"non       ", "inf       ", "infeg     ", "sup       ",
-		"supeg     ", "eg        ", "diff      ", "add       ",
-		"sous      ", "mul       ", "div       ", "bsifaux   ",
-		"bincond   ", "lirent    ", "lirebool  ", "ecrent    ",
-		"ecrbool   ", "arret     ", "empileradg", "empileradl",
-		"contenul  ", "affecterl ", "appel     ", "retour    " };
 
-	
+	private static final String[] inst = { "", "reserver  ", "empiler   ", "contenug  ", "affecterg ", "ou        ",
+			"et        ", "non       ", "inf       ", "infeg     ", "sup       ", "supeg     ", "eg        ",
+			"diff      ", "add       ", "sous      ", "mul       ", "div       ", "bsifaux   ", "bincond   ",
+			"lirent    ", "lirebool  ", "ecrent    ", "ecrbool   ", "arret     ", "empileradg", "empileradl",
+			"contenul  ", "affecterl ", "appel     ", "retour    " };
+
 	private static int old_ipo = 0;
-	
-	private static void affMnemoIpo(){
-			if(po.getIpo() > 0) {
-				int diff = po.getIpo() - old_ipo;
-				if(diff == 1) {
-					System.out.println(String.valueOf(po.getIpo()) + " " + inst[po.getElt(po.getIpo())]);
-				}
-				else if(diff == 2) {
-					System.out.println(String.valueOf(po.getIpo()-1) + " " + inst[ po.getElt(po.getIpo()-1) ] +  po.getElt(po.getIpo()));
-				}
-				else if(diff == 3) {
-					System.out.println(String.valueOf(po.getIpo()-2) + " " + inst[ po.getElt(po.getIpo()-2) ] +  po.getElt(po.getIpo()-1) + " " + po.getElt(po.getIpo()));
-				}
+
+	private static void affMnemoIpo() {
+		if (po.getIpo() > 0) {
+			int diff = po.getIpo() - old_ipo;
+			if (diff == 1) {
+				System.out.println(String.valueOf(po.getIpo()) + " " + inst[po.getElt(po.getIpo())]);
+			} else if (diff == 2) {
+				System.out.println(String.valueOf(po.getIpo() - 1) + " " + inst[po.getElt(po.getIpo() - 1)]
+						+ po.getElt(po.getIpo()));
+			} else if (diff == 3) {
+				System.out.println(String.valueOf(po.getIpo() - 2) + " " + inst[po.getElt(po.getIpo() - 2)]
+						+ po.getElt(po.getIpo() - 1) + " " + po.getElt(po.getIpo()));
 			}
+		}
 		old_ipo = po.getIpo();
 	}
 
@@ -205,9 +200,8 @@ public class PtGen {
 		// indices de gestion de la table des symboles
 		it = 0;
 		bc = 1;
-		counterVar = 0;
+		counter = 0;
 		id_save = 0;
-		
 
 		// pile des reprises pour compilation des branchements en avant
 		pileRep = new TPileRep();
@@ -228,7 +222,7 @@ public class PtGen {
 	// -----------------------------------------
 	public static void pt(int numGen) {
 		System.out.println("numGen = " + numGen);
-		
+
 		switch (numGen) {
 		case 0:
 			initialisations();
@@ -255,20 +249,20 @@ public class PtGen {
 			break;
 
 		/* EXPRESSIONS */
-			
-		/* Empiler une valeur brute
-		 * primaire -> val {}
+
+		/*
+		 * Empiler une valeur brute primaire -> val {}
 		 */
-		case 5: // 
+		case 5: //
 			po.produire(EMPILER);
 			po.produire(vCour);
 			break;
-			
-		/* Empiler une variable ou constante
-		 * primaire -> ident {}	
+
+		/*
+		 * Empiler une variable ou constante primaire -> ident {}
 		 */
 		case 6:
-			a = presentIdent(bc);
+			a = presentIdent(1);
 			if (a == 0) {
 				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " non declare");
 			}
@@ -284,42 +278,43 @@ public class PtGen {
 				po.produire(tabSymb[a].info);
 				break;
 			case PARAMFIXE:
-			case PARAMMOD:
 			case VARLOCALE:
 				po.produire(CONTENUL);
 				po.produire(tabSymb[a].info);
 				po.produire(0);
-			break;
-				
+				break;
+			case PARAMMOD:
+				po.produire(CONTENUL);
+				po.produire(tabSymb[a].info);
+				po.produire(1);
+				break;
+			default:
+				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " n'est pas de la bonne categorie");
 			}
-		break;
-     
-		/* Verifications du type pour les operations suivantes :
+			break;
+
+		/*
+		 * Verifications du type pour les operations suivantes :
 		 * 
-         * exp3 -> exp4 = {} exp4 {}
-         *         exp4 <= {} exp4 {}
-         *         exp4 ... {} exp4 {}
-         * 
-         * exp4 -> exp5 + {} exp5 {}
-         *         exp5 - {} exp5 {}
-         * 
-         * exp5 -> primaire * {} primaire {}
-         *         primaire div {} primaire {}
-         */
+		 * exp3 -> exp4 = {} exp4 {} exp4 <= {} exp4 {} exp4 ... {} exp4 {}
+		 * 
+		 * exp4 -> exp5 + {} exp5 {} exp5 - {} exp5 {}
+		 * 
+		 * exp5 -> primaire * {} primaire {} primaire div {} primaire {}
+		 */
 		case 7:
 			verifEnt();
 			break;
-			
-		/* Verifications du type pour les operations suivantes :
+
+		/*
+		 * Verifications du type pour les operations suivantes :
 		 * 
-		 * expr -> exp1 ou {} exp1 {}
-		 * exp1 -> exp2 et {} exp2 {}
-		 * exp2 -> non exp2 {}
+		 * expr -> exp1 ou {} exp1 {} exp1 -> exp2 et {} exp2 {} exp2 -> non exp2 {}
 		 */
 		case 8:
 			verifBool();
 			break;
-			
+
 		/* OPERATIONS BOOLEENNES 10-12 */
 
 		case 10: // x ou y {verif}{}
@@ -365,9 +360,9 @@ public class PtGen {
 			po.produire(DIFF);
 			tCour = BOOL;
 			break;
-			
+
 		/* OPERATIONS ARITHMETIQUES 19-22 */
-		
+
 		case 19: // x + y {verif}{}
 			po.produire(ADD);
 			break;
@@ -383,82 +378,89 @@ public class PtGen {
 		case 22: // x div y {verif}{}
 			po.produire(DIV);
 			break;
-		
+
 		/* FIN EXPRESSION */
 
 		/* DECLARATIONS 30 */
 
-		/* Declaration constante
-		 * consts -> const a=val;{} b=val;{} ...;{}
+		/*
+		 * Declaration constante consts -> const a=val;{} b=val;{} ...;{}
 		 */
 		case 30:
-			if(presentIdent(bc) != 0) {
+			if (presentIdent(bc) != 0) {
 				UtilLex.messErr("Constante " + UtilLex.repId(UtilLex.numId) + " deja declare");
-			}
-			else {
+			} else {
 				placeIdent(UtilLex.numId, CONSTANTE, tCour, vCour);
 			}
-		break;
-			
-		/* Declaration variable
-		 * vars -> var ent a{}, b{}; bool c{}, ...{}; ent ...{};
-		 */	
+			break;
+
+		/*
+		 * Declaration variable vars -> var ent a{}, b{}; bool c{}, ...{}; ent ...{};
+		 */
 		case 31:
-			if(presentIdent(bc) != 0) {
+			if (presentIdent(bc) != 0) {
 				UtilLex.messErr("Variable " + UtilLex.repId(UtilLex.numId) + " deja declare");
 			}
-			
-			if(bc == 1) {
-				placeIdent(UtilLex.numId, VARGLOBALE, tCour, counterVar);
+
+			if (bc == 1) {
+				placeIdent(UtilLex.numId, VARGLOBALE, tCour, counter);
+			} else {
+				placeIdent(UtilLex.numId, VARLOCALE, tCour, counter);
 			}
-			else {
-				placeIdent(UtilLex.numId, VARLOCALE, tCour, counterVar);
-			}
-			counterVar++;
-		break;
-		/* Reservation de place dans la pile
-		 * vars -> var (...;)+ {} 	
+			counter++;
+			break;
+		/*
+		 * Reservation de place dans la pile vars -> var (...;)+ {}
 		 */
 		case 32:
+			
 			po.produire(RESERVER);
-			po.produire(counterVar);
-		break;
-		/* tCour = type
-		 * type -> 'ent'{43} | 'bool' {44} 
+			if(bc==1)
+				po.produire(counter);
+			else
+				po.produire(counter-tabSymb[bc-1].info-2);
+			break;
+		/*
+		 * tCour = type type -> 'ent'{43} | 'bool' {44}
 		 */
 		case 33:
 			tCour = ENT;
-		break;
+			break;
 		case 34:
 			tCour = BOOL;
-		break;
-			
+			break;
+
 		/* AFFECTATION 40 */
-		
-		/* On sauvegarde l'id lu au début dans id_save
-		 * AffOuAppel -> ident {} ( := expr | effixes effmodes  )
+
+		/*
+		 * On sauvegarde l'id lu au début dans id_save AffOuAppel -> ident {} ( := expr
+		 * | effixes effmodes )
 		 */
 		case 40:
-			id_save = presentIdent(bc);
+			id_save = presentIdent(1);
+			afftabSymb();
 			if (id_save == 0) {
 				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " non declare");
 			}
+			
+			// System.out.println("p = "+ id_save);
+			
 			break;
-		
-		// AffOuAppel ->  ident := expr {}	
+
+		// AffOuAppel -> ident := expr {}
 		case 41:
-			if(tCour != tabSymb[id_save].type) {
+			if (tCour != tabSymb[id_save].type) {
 				UtilLex.messErr("Affectation : Types incompatibles");
 			}
-		break;
-		
-		/* Fin de traitement de la partie droite, on compare si les types sont les memes
-		 * Que les categories sont ok
-		 * Et on affecte
-		 * AffOuAppel ->  ident := expr {verifTcour}{}	| Non traite
+			break;
+
+		/*
+		 * Fin de traitement de la partie droite, on compare si les types sont les memes
+		 * Que les categories sont ok Et on affecte AffOuAppel -> ident := expr
+		 * {verifTcour}{} | Non traite
 		 */
 		case 42:
-			switch(tabSymb[id_save].categorie) {
+			switch (tabSymb[id_save].categorie) {
 			case VARGLOBALE:
 				po.produire(AFFECTERG);
 				po.produire(tabSymb[id_save].info);
@@ -476,33 +478,32 @@ public class PtGen {
 			default:
 				UtilLex.messErr("Affectation : Categorie invalide");
 			}
-		break;
-		
-		
+			break;
+
 		// lecture -> lire ( ident{43}{42}, ident{43}{42}, ...{43}{42} )
 		case 43:
 			id_save = presentIdent(bc);
 			if (id_save == 0) {
 				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " non declare");
 			}
-			switch(tabSymb[id_save].type) {
-				case ENT:
-					po.produire(LIRENT);
-					break;
-				case BOOL:
-					po.produire(LIREBOOL);
-					break;
-				default:
-					UtilLex.messErr("Lecture : Type de variable inconnu");
+			switch (tabSymb[id_save].type) {
+			case ENT:
+				po.produire(LIRENT);
+				break;
+			case BOOL:
+				po.produire(LIREBOOL);
+				break;
+			default:
+				UtilLex.messErr("Lecture : Type de variable inconnu");
 			}
-			
+
 			break;
-		
-		/* ECRITURE 
-		 * ecriture -> ecrire ( expr{}, expr{}, ...{} )
+
+		/*
+		 * ECRITURE ecriture -> ecrire ( expr{}, expr{}, ...{} )
 		 */
 		case 44:
-			switch(tCour) {
+			switch (tCour) {
 			case ENT:
 				po.produire(ECRENT);
 				break;
@@ -512,243 +513,249 @@ public class PtGen {
 			default:
 				UtilLex.messErr("Ecrire : Type de variable inconnu");
 			}
-		break;
+			break;
 
-
-		
 		/* STRUCTURES CONDITIONNELLES 50 */
-			
+
 		/* SI */
-			
+
 		// inssi -> 'si' expr {verifBool} {} 'alors' ..
 		case 50:
 			po.produire(BSIFAUX);
 			po.produire(0); // fsi OU sinon
-			pileRep.empiler(po.getIpo()); 
-		break;
-		
-		// inssi -> 'si' expr 'alors' expr 'sinon' {}  ..
+			pileRep.empiler(po.getIpo());
+			break;
+
+		// inssi -> 'si' expr 'alors' expr 'sinon' {} ..
 		// Après sinon, on doit renvoyer pc à la fin du if si if pris
 		case 51:
 			po.produire(BINCOND);
 			po.produire(0); // fsi
-			po.modifier(pileRep.depiler(), po.getIpo()+1);
+			po.modifier(pileRep.depiler(), po.getIpo() + 1);
 			pileRep.empiler(po.getIpo());
-		break;
-		
+			break;
+
 		// inssi -> ... fsi {}
 		case 52:
-			po.modifier(pileRep.depiler(), po.getIpo()+1);
-		break;
-		
+			po.modifier(pileRep.depiler(), po.getIpo() + 1);
+			break;
+
 		/* TTQ */
-		// boucle -> 'ttq' {} expr 'faire' 
+		// boucle -> 'ttq' {} expr 'faire'
 		case 53:
-			pileRep.empiler(po.getIpo()+1); // debut ttq
-		break;
-		
+			pileRep.empiler(po.getIpo() + 1); // debut ttq
+			break;
+
 		// boucle -> 'ttq' expr {verifBool}{} 'faire' ... fait
 		case 54:
 			po.produire(BSIFAUX);
 			po.produire(0); // fait
 			pileRep.empiler(po.getIpo());
-		break;
-		
-		// boucle -> 'ttq' expr  ... fait {}
+			break;
+
+		// boucle -> 'ttq' expr ... fait {}
 		case 55:
-			po.modifier(pileRep.depiler(), po.getIpo()+3); // modif de bsifaux, jump après bincond
+			po.modifier(pileRep.depiler(), po.getIpo() + 3); // modif de bsifaux, jump après bincond
 			po.produire(BINCOND);
 			po.produire(pileRep.depiler()); // debut du ttq
-		break;
-			
+			break;
+
 		/* COND */
-		
-		// inscond ->  'cond' {} ...
+
+		// inscond -> 'cond' {} ...
 		case 56:
 			pileRep.empiler(0);
-		break;
-		
+			break;
+
 		// inscond -> 'cond' expr {verifBool}{} : ins, expr {verifBool}{} ...
 		case 57:
 			po.produire(BSIFAUX);
 			po.produire(0);
 			pileRep.empiler(po.getIpo());
-		break;
-		
+			break;
+
 		// inscond -> 'cond' expr : ins,{} expr : ins,{},... ins
 		// inscond -> 'cond' expr : ins,{} expr : ins aut {},... ins
 		// Seulement apres une virgule
 		case 58:
-			po.modifier(pileRep.depiler(), po.getIpo()+3); // maj bsifaux
+			po.modifier(pileRep.depiler(), po.getIpo() + 3); // maj bsifaux
 			po.produire(BINCOND);
 			po.produire(pileRep.depiler());
 			pileRep.empiler(po.getIpo());
-		break;
-		
-		//  inscond -> 'cond' expr : ins aut {58}{} 
+			break;
+
+		// inscond -> 'cond' expr : ins aut {58}{}
 		case 59:
 			pileRep.empiler(0);
-		break;
-		
+			break;
+
 		// inscond -> 'fcond' {}
 		case 60:
 			a = pileRep.depiler();
-			if(a != 0) { // bsifaux a mettre a jour
-				po.modifier(a, po.getIpo()+1);
+			if (a != 0) { // bsifaux a mettre a jour
+				po.modifier(a, po.getIpo() + 1);
 			}
 			a = pileRep.depiler();
 			int elti;
-			while (a != 0) { //bcond a mettre a jour
+			while (a != 0) { // bcond a mettre a jour
 				elti = po.getElt(a);
-				po.modifier(a, po.getIpo()+1);
+				po.modifier(a, po.getIpo() + 1);
 				a = elti;
 			}
-		break;
-		
+			break;
+
 		/* PROCEDURES */
-		
+
 		// decproc -> 'proc' ident {}
 		case 61:
-			if(presentIdent(bc) != 0) {
+			if (presentIdent(1) != 0) {
 				UtilLex.messErr("Procedure " + UtilLex.repId(UtilLex.numId) + " deja declare");
 			}
-			po.produire(BINCOND);
-			po.produire(0);
-			pileRep.empiler(po.getIpo());
-			placeIdent(UtilLex.numId, PROC, NEUTRE, po.getIpo()+1);
+			
+
+			placeIdent(UtilLex.numId, PROC, NEUTRE, po.getIpo() + 1);
 			placeIdent(-1, PRIVEE, NEUTRE, 0);
-			counterVar = 0;
-			bc = it+1;
-		break;
-		
+			counter = 0;
+			bc = it + 1;
+			break;
+
 		// pf -> type ident {} ( ',' ident {} )*
 		case 62:
-			if(presentIdent(bc) != 0) {
+			if (presentIdent(bc) != 0) {
 				UtilLex.messErr("Parametre fixe " + UtilLex.repId(UtilLex.numId) + " deja declare");
 			}
-			placeIdent(UtilLex.numId, PARAMFIXE, tCour, counterVar);
-			counterVar++;
-		break;
-		
-		// pm-> type ident {} ( ',' ident {} )*
+			placeIdent(UtilLex.numId, PARAMFIXE, tCour, counter);
+			counter++;
+			break;
+
+		// pm -> type ident {} ( ',' ident {} )*
 		case 63:
-			if(presentIdent(bc) != 0) {
+			if (presentIdent(bc) != 0) {
 				UtilLex.messErr("Parametre modulable " + UtilLex.repId(UtilLex.numId) + " deja declare");
-			} 
-			placeIdent(UtilLex.numId, PARAMMOD, tCour, counterVar);
-			counterVar++;
-		break;
-		
+			}
+			placeIdent(UtilLex.numId, PARAMMOD, tCour, counter);
+			counter++;
+			break;
+
 		// Mise a jour du nombre de param dns tabSymb
 		// decproc -> 'proc' ident parfixe? parmod? {}
 		case 64:
-			tabSymb[it-counterVar].info = counterVar;
-			counterVar += 2;
-		break;
-		
+			tabSymb[it - counter].info = counter;
+			counter += 2;
+			break;
+
 		/* APPEL PROCEDURE */
-		
+
 		// AffOuAppel -> ident (... | {} (effixes (effmods)?)? )
 		case 65:
-			if(tabSymb[id_save].categorie != PROC) {
+			if (tabSymb[id_save].categorie != PROC) {
 				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " n'est pas une procedure");
 			}
-			counterVar = 0; // Permet de compter le nombre d'arguement
-		break;
-		
-		// effixes -> '(' (expr {} ( , expr {} )*  )? ')'
+			counter = 0; // Permet de compter le nombre d'arguement
+			break;
+
+		// effixes -> '(' (expr {} ( , expr {} )* )? ')'
 		case 66:
-			if(counterVar >= tabSymb[id_save].info) {
+			counter++;
+			
+			if (counter > tabSymb[id_save+1].info) {
 				UtilLex.messErr("Appel : Le nombre de parametres est trop grand");
 			}
-			if(tabSymb[id_save+counterVar].info != PARAMFIXE) {
-				UtilLex.messErr("Appel : le " + counterVar+1 + " parametre doit etre modulable");
-			}
-			counterVar++;
-		break;
-		
-		// effmods -> '(' (ident {} ( , ident {} )*  )? ')'
-		case 67:
-			if(counterVar >= tabSymb[id_save].info) {
-				UtilLex.messErr("Appel : Le nombre de parametres est trop grand");
-			}
-			if(tabSymb[id_save+counterVar].categorie != PARAMMOD) {
-				UtilLex.messErr("Appel : Le " + counterVar+1 + " parametre doit etre fixe");
+			if (tabSymb[id_save + counter + 1].categorie != PARAMFIXE) {
+				UtilLex.messErr("Appel : le parametre " + counter + " doit etre modulable");
 			}
 			
-			a = presentIdent(bc);
+			break;
+
+		// effmods -> '(' (ident {} ( , ident {} )* )? ')'
+		case 67:
+			counter++;
+			
+			if (counter > tabSymb[id_save+1].info) {
+				UtilLex.messErr("Appel : Le nombre de parametres est trop grand");
+			}
+			if (tabSymb[id_save + counter + 1].categorie != PARAMMOD) {
+				UtilLex.messErr("Appel : Le parametre " + counter + " doit etre fixe");
+			}
+
+			a = presentIdent(1);
 			if (a == 0) {
 				UtilLex.messErr("Appel : " + UtilLex.repId(UtilLex.numId) + " non declare");
 			}
-			if(tabSymb[id_save+counterVar].type != tabSymb[a].type) {
+			if (tabSymb[a].type != tabSymb[id_save + counter + 1].type) {
 				UtilLex.messErr("Appel : " + UtilLex.repId(UtilLex.numId) + "n'est pas du bon type");
 			}
-				
-			switch(tabSymb[a].categorie) {
+
+			switch (tabSymb[a].categorie) {
 			case VARGLOBALE:
 				po.produire(EMPILERADG);
-				po.produire(counterVar);
+				po.produire(tabSymb[a].info);
 				break;
 			case VARLOCALE:
 				po.produire(EMPILERADL);
-				po.produire(counterVar);
+				po.produire(tabSymb[a].info);
 				po.produire(0);
 				break;
 			case PARAMMOD:
 				po.produire(EMPILERADL);
-				po.produire(counterVar);
+				po.produire(tabSymb[a].info);
 				po.produire(1);
 				break;
 			default:
 				UtilLex.messErr("Appel : " + UtilLex.repId(UtilLex.numId) + "n'est pas de la bonne categorie");
 			}
-			counterVar++;
-				
-		break;
-		
+
+			break;
+
 		// AffOuAppel -> ident (... | (effixes (effmods)?)? {})
 		case 68:
 			po.produire(APPEL);
 			po.produire(tabSymb[id_save].info);
-			po.produire(counterVar);
-		break;
-		
-		
-		/* FIN & GENERATIONS DU CODE
-		 * corps -> 'debut' instructions 'fin' {}
-		*/
+			po.produire(counter);
+			break;
+			
+		// decprocs -> {}(decproc ptvg ) + {depilement,70}
+		case 69:
+			po.produire(BINCOND);
+			po.produire(0);
+			pileRep.empiler(po.getIpo());
+			break;
+			
+		// decprocs -> {empilement, 69}(decproc ptvg ) + {}
+		case 70:
+			po.modifier(pileRep.depiler(), po.getIpo() + 1);
+			break;
+
+		/*
+		 * FIN & GENERATIONS DU CODE corps -> 'debut' instructions 'fin' {}
+		 */
 		case 255:
-			if(bc == 1) {
+			if (bc == 1) {
 				po.produire(ARRET);
 				po.constObj();
 				po.constGen();
 				afftabSymb();
-			}
-			else {
-				for(int i = it; i >= bc; i--) {
-					if(tabSymb[i].categorie == VARLOCALE || tabSymb[i].categorie == CONSTANTE) {
-						tabSymb[i] = null;
-					}
-					else if(tabSymb[i].categorie == PARAMFIXE || tabSymb[i].categorie == PARAMMOD) {
-						tabSymb[i].code = -1; 
-					}
-					else {
+			} else {
+				for (int i = it; i >= bc; i--) {
+					if (tabSymb[i].categorie == VARLOCALE || tabSymb[i].categorie == CONSTANTE) {
+						tabSymb[i] = null; it--;
+					} else if (tabSymb[i].categorie == PARAMFIXE || tabSymb[i].categorie == PARAMMOD) {
+						tabSymb[i].code = -1;
+					} else {
 						UtilLex.messErr("Erreur interne avec tabSymb");
 					}
 				}
 				po.produire(RETOUR);
-				po.produire(tabSymb[bc-1].info);
-				po.modifier(pileRep.depiler(), po.getIpo()+1);
+				po.produire(tabSymb[bc - 1].info);
 				bc = 1;
 			}
-		break;
+			break;
 
 		default:
 			System.out.println("Point de generation non prevu dans votre liste");
-		break;
-		
+			break;
+
 		}
-		
 		affMnemoIpo();
 	}
 }

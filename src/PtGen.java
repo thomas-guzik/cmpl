@@ -116,9 +116,7 @@ public class PtGen {
 	// it = indice de remplissage de tabSymb
 	// bc = bloc courant (=1 si le bloc courant est le programme principal)
 	// a = variable a tout faire
-	// counterVar = compte le nb de variable lors de la declarations
-	// tAff = type de la variable a affecter
-	// iAff = placement de la pile de la variable a affecter
+	// counter = compte le nb de variable lors de la declarations
 	private static int it, bc, a, counter, id_save;
 
 	// utilitaire de recherche de l'ident courant (ayant pour code UtilLex.numId)
@@ -438,7 +436,6 @@ public class PtGen {
 		 */
 		case 40:
 			id_save = presentIdent(1);
-			afftabSymb();
 			if (id_save == 0) {
 				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " non declare");
 			}
@@ -709,6 +706,10 @@ public class PtGen {
 
 		// AffOuAppel -> ident (... | (effixes (effmods)?)? {})
 		case 68:
+			if(counter != tabSymb[id_save+1].info) {
+				UtilLex.messErr("Appel : il manque des parametres");
+			}
+			
 			po.produire(APPEL);
 			po.produire(tabSymb[id_save].info);
 			po.produire(counter);

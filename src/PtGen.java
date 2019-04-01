@@ -116,8 +116,9 @@ public class PtGen {
 	// it = indice de remplissage de tabSymb
 	// bc = bloc courant (=1 si le bloc courant est le programme principal)
 	// a = variable a tout faire
-	// counter = compte le nb de variable lors de la declarations
-	private static int it, bc, a, counter, id_save;
+	// counter = compteur qui se retrouve partout // A detailler plus
+	// nbRef = compte le nombre de reference
+	private static int it, bc, a, counter, id_save, nbRef;
 
 	// utilitaire de recherche de l'ident courant (ayant pour code UtilLex.numId)
 	// dans tabSymb
@@ -200,6 +201,7 @@ public class PtGen {
 		bc = 1;
 		counter = 0;
 		id_save = 0;
+		nbRef = 0;
 
 		// pile des reprises pour compilation des branchements en avant
 		pileRep = new TPileRep();
@@ -409,14 +411,19 @@ public class PtGen {
 			break;
 		/*
 		 * Reservation de place dans la pile vars -> var (...;)+ {}
+		 * seulement si module == false
 		 */
 		case 32:
+			if(desc.getUnite().equals("programme")) {
+				po.produire(RESERVER);
+				if(bc==1) {
+					po.produire(counter);
+					desc.setTailleGlobaux(counter);
+				}
+				else
+					po.produire(counter-tabSymb[bc-1].info-2);
+			}
 			
-			po.produire(RESERVER);
-			if(bc==1)
-				po.produire(counter);
-			else
-				po.produire(counter-tabSymb[bc-1].info-2);
 			break;
 		/*
 		 * tCour = type type -> 'ent'{43} | 'bool' {44}
@@ -707,7 +714,7 @@ public class PtGen {
 		// AffOuAppel -> ident (... | (effixes (effmods)?)? {})
 		case 68:
 			if(counter != tabSymb[id_save+1].info) {
-				UtilLex.messErr("Appel : il manque des parametres");
+				UtilLex.messErr("Appel : le nombre de parametres est invalide");
 			}
 			
 			po.produire(APPEL);
@@ -726,15 +733,63 @@ public class PtGen {
 		case 70:
 			po.modifier(pileRep.depiler(), po.getIpo() + 1);
 			break;
-
+		
+		/* GESTION DES MODULES */
+		
+		// unitprog -> 'programme' {} ident ':' declarations corps
+		case 71:
+			desc.setUnite("programme");
+			break;
+		
+		// unitmodule -> 'module' {} ident ':' declarations
+		case 72:
+			desc.setUnite("module");
+			break;
+		
+		// partiedef -> 'def' ident {}  (',' ident {} )*
+		case 73:
+			desc.ajoutDef(UtilLex.repId(UtilLex.numId));
+			break;
+		
+		/* PARTIE REF */
+		
+		// specif -> ident {} ( 'fixe' '(' type  ( ',' type  )* ')' )? 
+        //          ( 'mod'  '(' type  ( ',' type  )* ')' )? 
+		case 74:
+			counter = 0;
+			desc.ajoutRef(UtilLex.repId(UtilLex.numId));
+			break;
+		
+		// specif -> ident ( 'fixe' '(' type {} ( ',' type {} )* ')' )? 
+        //          ( 'mod'  '(' type {} ( ',' type {} )* ')' )? 
+		case 75:
+			counter++;
+			break;
+			
+		// partieref -> 'ref' specif {} ( ',' specif {}) * 	
+		case 76:
+			nbRef++;
+			desc.modifRefNbParam(nbRef, counter);
+			break;
+		
+		// declarations -> partiedef? {} partieref? ...
+		case 77:
+			if(desc.getUnite().equals("module") && desc.getNbDef() == 0) {
+				UtilLex.messErr("Le module definit aucune procedure");
+			}
+			break;
+		
+		
 		/*
 		 * FIN & GENERATIONS DU CODE corps -> 'debut' instructions 'fin' {}
 		 */
 		case 255:
 			if (bc == 1) {
 				po.produire(ARRET);
+				desc.setTailleCode(po.getIpo());
 				po.constObj();
 				po.constGen();
+				desc.ecrireDesc(UtilLex.nomSource);
 				afftabSymb();
 			} else {
 				for (int i = it; i >= bc; i--) {

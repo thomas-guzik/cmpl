@@ -117,8 +117,7 @@ public class PtGen {
 	// bc = bloc courant (=1 si le bloc courant est le programme principal)
 	// a = variable a tout faire
 	// counter = compteur qui se retrouve partout // A detailler plus
-	// nbRef = compte le nombre de reference
-	private static int it, bc, a, counter, id_save, nbRef;
+	private static int it, bc, a, counter, id_save;
 
 	// utilitaire de recherche de l'ident courant (ayant pour code UtilLex.numId)
 	// dans tabSymb
@@ -141,7 +140,12 @@ public class PtGen {
 		it = it + 1;
 		tabSymb[it] = new EltTabSymb(c, cat, t, v);
 	}
-
+	
+	private static void onlyIfModuleAddVecteurTrans(int x) {
+		if(desc.getUnite().equals("module")) {
+			po.vecteurTrans(x);
+		}
+	}
 	/* DEBUG */
 	// utilitaire d'affichage de la table des symboles
 	//
@@ -201,7 +205,6 @@ public class PtGen {
 		bc = 1;
 		counter = 0;
 		id_save = 0;
-		nbRef = 0;
 
 		// pile des reprises pour compilation des branchements en avant
 		pileRep = new TPileRep();
@@ -276,6 +279,7 @@ public class PtGen {
 			case VARGLOBALE:
 				po.produire(CONTENUG);
 				po.produire(tabSymb[a].info);
+				onlyIfModuleAddVecteurTrans(TRANSDON);
 				break;
 			case PARAMFIXE:
 			case VARLOCALE:
@@ -468,6 +472,7 @@ public class PtGen {
 			case VARGLOBALE:
 				po.produire(AFFECTERG);
 				po.produire(tabSymb[id_save].info);
+				onlyIfModuleAddVecteurTrans(TRANSDON);
 				break;
 			case VARLOCALE:
 				po.produire(AFFECTERL);
@@ -527,6 +532,7 @@ public class PtGen {
 		case 50:
 			po.produire(BSIFAUX);
 			po.produire(0); // fsi OU sinon
+			onlyIfModuleAddVecteurTrans(TRANSCODE);
 			pileRep.empiler(po.getIpo());
 			break;
 
@@ -535,6 +541,7 @@ public class PtGen {
 		case 51:
 			po.produire(BINCOND);
 			po.produire(0); // fsi
+			onlyIfModuleAddVecteurTrans(TRANSCODE);
 			po.modifier(pileRep.depiler(), po.getIpo() + 1);
 			pileRep.empiler(po.getIpo());
 			break;
@@ -554,6 +561,7 @@ public class PtGen {
 		case 54:
 			po.produire(BSIFAUX);
 			po.produire(0); // fait
+			onlyIfModuleAddVecteurTrans(TRANSCODE);
 			pileRep.empiler(po.getIpo());
 			break;
 
@@ -562,6 +570,7 @@ public class PtGen {
 			po.modifier(pileRep.depiler(), po.getIpo() + 3); // modif de bsifaux, jump après bincond
 			po.produire(BINCOND);
 			po.produire(pileRep.depiler()); // debut du ttq
+			onlyIfModuleAddVecteurTrans(TRANSCODE);
 			break;
 
 		/* COND */
@@ -575,6 +584,7 @@ public class PtGen {
 		case 57:
 			po.produire(BSIFAUX);
 			po.produire(0);
+			onlyIfModuleAddVecteurTrans(TRANSCODE);
 			pileRep.empiler(po.getIpo());
 			break;
 
@@ -585,6 +595,7 @@ public class PtGen {
 			po.modifier(pileRep.depiler(), po.getIpo() + 3); // maj bsifaux
 			po.produire(BINCOND);
 			po.produire(pileRep.depiler());
+			onlyIfModuleAddVecteurTrans(TRANSCODE);
 			pileRep.empiler(po.getIpo());
 			break;
 
@@ -694,6 +705,7 @@ public class PtGen {
 			case VARGLOBALE:
 				po.produire(EMPILERADG);
 				po.produire(tabSymb[a].info);
+				onlyIfModuleAddVecteurTrans(TRANSDON);
 				break;
 			case VARLOCALE:
 				po.produire(EMPILERADL);
@@ -719,6 +731,7 @@ public class PtGen {
 			
 			po.produire(APPEL);
 			po.produire(tabSymb[id_save].info);
+			po.vecteurTrans(REFEXT);
 			po.produire(counter);
 			break;
 			
@@ -726,6 +739,7 @@ public class PtGen {
 		case 69:
 			po.produire(BINCOND);
 			po.produire(0);
+			onlyIfModuleAddVecteurTrans(TRANSCODE);
 			pileRep.empiler(po.getIpo());
 			break;
 			
@@ -734,7 +748,7 @@ public class PtGen {
 			po.modifier(pileRep.depiler(), po.getIpo() + 1);
 			break;
 		
-		/* GESTION DES MODULES */
+		/* GESTION DU DESCRIPTEUR */
 		
 		// unitprog -> 'programme' {} ident ':' declarations corps
 		case 71:
@@ -748,6 +762,9 @@ public class PtGen {
 		
 		// partiedef -> 'def' ident {}  (',' ident {} )*
 		case 73:
+			if(desc.presentDef(UtilLex.repId(UtilLex.numId)) != 0) {
+				UtilLex.messErr("Definition: " + UtilLex.repId(UtilLex.numId) + " deja defini");
+			}
 			desc.ajoutDef(UtilLex.repId(UtilLex.numId));
 			break;
 		
@@ -756,24 +773,38 @@ public class PtGen {
 		// specif -> ident {} ( 'fixe' '(' type  ( ',' type  )* ')' )? 
         //          ( 'mod'  '(' type  ( ',' type  )* ')' )? 
 		case 74:
+			if(desc.presentRef(UtilLex.repId(UtilLex.numId)) != 0) {
+				UtilLex.messErr("Reference " + UtilLex.repId(UtilLex.numId) + " deja declare");
+			}
+			
 			counter = 0;
-			desc.ajoutRef(UtilLex.repId(UtilLex.numId));
+			id_save = UtilLex.numId;
+			desc.ajoutRef(UtilLex.repId(id_save));
+			placeIdent(id_save, PROC, NEUTRE, desc.getNbRef());
+			placeIdent(-1, PRIVEE, NEUTRE, counter);
+			break;
+		
+		// specif -> ident ( 'fixe' '(' type {} ( ',' type {} )* ')' )? 
+        //          ( 'mod'  '(' type ( ',' type )* ')' )? 
+		case 75:
+			placeIdent(-1, PARAMFIXE, tCour, counter);
+			counter++;
 			break;
 		
 		// specif -> ident ( 'fixe' '(' type {} ( ',' type {} )* ')' )? 
         //          ( 'mod'  '(' type {} ( ',' type {} )* ')' )? 
-		case 75:
-			counter++;
-			break;
-			
-		// partieref -> 'ref' specif {} ( ',' specif {}) * 	
 		case 76:
-			nbRef++;
-			desc.modifRefNbParam(nbRef, counter);
+			placeIdent(-1, PARAMMOD, tCour, counter);
+			counter++;
+			break;	
+		// partieref -> 'ref' specif {} ( ',' specif {}) * 	
+		case 77:
+			desc.modifRefNbParam(desc.getNbDef(), counter);
+			tabSymb[it-counter].info = counter;
 			break;
 		
 		// declarations -> partiedef? {} partieref? ...
-		case 77:
+		case 78:
 			if(desc.getUnite().equals("module") && desc.getNbDef() == 0) {
 				UtilLex.messErr("Le module definit aucune procedure");
 			}
@@ -787,6 +818,22 @@ public class PtGen {
 			if (bc == 1) {
 				po.produire(ARRET);
 				desc.setTailleCode(po.getIpo());
+				//desc.
+				
+				// Mise a jour de tabDef
+				String defNom = "";
+				for(int i = desc.getNbDef(); i > 0; i--) {
+					defNom = desc.getDefNomProc(i);
+					for(int j = it; j > 0; j--) {
+						if(defNom.equals(UtilLex.repId(tabSymb[j].code)) && tabSymb[j].categorie == PROC) {
+							desc.modifDefAdPo(i, tabSymb[j].info);
+							desc.modifDefNbParam(i, tabSymb[j+1].info);
+							break;
+						}
+					}
+					UtilLex.messErr(defNom + " n'est defini par aucune procedure");
+				}
+				
 				po.constObj();
 				po.constGen();
 				desc.ecrireDesc(UtilLex.nomSource);

@@ -3,11 +3,6 @@ import java.io.*;
 
 public class Edl {
 	
-	public class transEx {
-		public int exPo;
-		public int X;
-	}
-	
 	// nombre max de modules, taille max d'un code objet d'une unite
 	static final int MAXMOD = 5, MAXOBJ = 1000;
 	// nombres max de references externes (REF) et de points d'entree (DEF)

@@ -117,6 +117,7 @@ public class PtGen {
 	// bc = bloc courant (=1 si le bloc courant est le programme principal)
 	// a = variable a tout faire
 	// counter = compteur qui se retrouve partout // A detailler plus
+	// id_save = numero d'un id qui sera sauvegarde
 	private static int it, bc, a, counter, id_save;
 
 	// utilitaire de recherche de l'ident courant (ayant pour code UtilLex.numId)
@@ -149,6 +150,7 @@ public class PtGen {
 	}
 	
 	private static void finishDesc() {
+		boolean notDefined = true;
 		desc.setTailleCode(po.getIpo());
 		
 		// Mise a jour de tabDef
@@ -156,13 +158,16 @@ public class PtGen {
 		for(int i = desc.getNbDef(); i > 0; i--) {
 			defNom = desc.getDefNomProc(i);
 			for(int j = it; j > 0; j--) {
-				if(defNom.equals(UtilLex.repId(tabSymb[j].code)) && tabSymb[j].categorie == PROC) {
+				if(tabSymb[j].code != -1 && defNom.equals(UtilLex.repId(tabSymb[j].code)) && tabSymb[j].categorie == PROC) {
 					desc.modifDefAdPo(i, tabSymb[j].info);
 					desc.modifDefNbParam(i, tabSymb[j+1].info);
+					notDefined = false;
 					break;
 				}
 			}
-			UtilLex.messErr(defNom + " n'est defini par aucune procedure");
+			if(notDefined) {
+				UtilLex.messErr(defNom + " n'est defini par aucune procedure");
+			}
 		}
 		desc.ecrireDesc(UtilLex.nomSource);
 	}
@@ -443,12 +448,13 @@ public class PtGen {
 				po.produire(RESERVER);
 				if(bc==1) {
 					po.produire(counter);
-					desc.setTailleGlobaux(counter);
 				}
 				else
 					po.produire(counter-tabSymb[bc-1].info-2);
 			}
-			
+			if(bc == 1) {
+				desc.setTailleGlobaux(counter);
+			}
 			break;
 		/*
 		 * tCour = type type -> 'ent'{43} | 'bool' {44}
@@ -471,9 +477,6 @@ public class PtGen {
 			if (id_save == 0) {
 				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " non declare");
 			}
-			
-			// System.out.println("p = "+ id_save);
-			
 			break;
 
 		// AffOuAppel -> ident := expr {}
@@ -526,7 +529,6 @@ public class PtGen {
 			default:
 				UtilLex.messErr("Lecture : Type de variable inconnu");
 			}
-
 			break;
 
 		/*
@@ -712,6 +714,8 @@ public class PtGen {
 			po.produire(RETOUR);
 			po.produire(tabSymb[bc - 1].info);
 			bc = 1;
+			break;
+		
 		/* APPEL PROCEDURE */
 
 		// AffOuAppel -> ident (... | {} (effixes (effmods)?)? )
@@ -732,7 +736,6 @@ public class PtGen {
 			if (tabSymb[id_save + counter + 1].categorie != PARAMFIXE) {
 				UtilLex.messErr("Appel : le parametre " + counter + " doit etre modulable");
 			}
-			
 			break;
 
 		// effmods -> '(' (ident {} ( , ident {} )* )? ')'
@@ -792,8 +795,6 @@ public class PtGen {
 			
 			po.produire(counter);
 			break;
-			
-		
 		
 		/* GESTION DU DESCRIPTEUR */
 		
@@ -847,7 +848,6 @@ public class PtGen {
 		
 		// partieref -> 'ref' specif {} ( ',' specif {}) * 	
 		case 87:
-			System.out.println("NBref = " + desc.getNbRef());
 			desc.modifRefNbParam(desc.getNbRef(), counter);
 			tabSymb[it-counter].info = counter;
 			break;
@@ -865,6 +865,7 @@ public class PtGen {
 		// unitprog -> 'programme' ident : declarations corps {254}{255}
 		case 254:
 			po.produire(ARRET);
+			break; // Ce break est inutile quand on y pense
 			
 		// unitprog -> 'programme' ident : declarations corps {}
 		// unitmodule -> 'module' ident : declarations {}

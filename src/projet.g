@@ -54,7 +54,7 @@ declarations
   ;
   
 partiedef
-  : 'def' ident {PtGen.pt(83);} (',' ident )* ptvg
+  : 'def' ident {PtGen.pt(83);} (',' ident {PtGen.pt(83);} )* ptvg
   ;
   
 partieref: 'ref'  specif {PtGen.pt(87);} (',' specif {PtGen.pt(87);} )* ptvg
@@ -74,7 +74,7 @@ type  : 'ent'  {PtGen.pt(33);}
   |     'bool' {PtGen.pt(34);}
   ;
   
-decprocs: {PtGen.pt(61);}(decproc ptvg)+ {PtGen.pt(72);}
+decprocs: {PtGen.pt(61);}(decproc ptvg)+ {PtGen.pt(62);}
   ;
   
 decproc :  'proc'  ident {PtGen.pt(63);} parfixe? parmod? {PtGen.pt(66);} consts? vars? corps {PtGen.pt(67);}
@@ -84,7 +84,7 @@ ptvg  : ';'
   | 
   ;
   
-corps : 'debut' instructions 'fin' {PtGen.pt(255);}
+corps : 'debut' instructions 'fin'
   ;
   
 parfixe: 'fixe' '(' pf ( ';' pf )* ')'

@@ -116,8 +116,9 @@ public class PtGen {
 	// it = indice de remplissage de tabSymb
 	// bc = bloc courant (=1 si le bloc courant est le programme principal)
 	// a = variable a tout faire
-	// counter = compteur qui se retrouve partout // A detailler plus
-	// id_save = numero d'un id qui sera sauvegarde
+	// counter = compteur qui est utilise pour compter les variables, les parametres de fonction,
+	// le nombre d'arguments d'un appel, le nombre de reference
+	// id_save = numero d'un id qui sera sauvegarde par AffOuAppel ou lecture (simplement pour des raisons d'efficacite) 
 	private static int it, bc, a, counter, id_save;
 
 	// utilitaire de recherche de l'ident courant (ayant pour code UtilLex.numId)
@@ -142,6 +143,7 @@ public class PtGen {
 		tabSymb[it] = new EltTabSymb(c, cat, t, v);
 	}
 	
+	// Ajoute a la liste trans une translation TRANSDON/TRANSCODE seulement si on est dans un module
 	private static void onlyIfModuleAddVecteurTrans(int x) {
 		if(desc.getUnite().equals("module")) {
 			po.vecteurTrans(x);
@@ -149,6 +151,9 @@ public class PtGen {
 		}
 	}
 	
+	// Genere un descripteur de fichier conforme :
+	// - Verifie si a pour chaque chaque fonction defini une proceduire lui correspond
+	// - Remplie ensuite les champs adPo et NbPram avec les valeurs adequates
 	private static void finishDesc() {
 		boolean notDefined = true;
 		desc.setTailleCode(po.getIpo());
@@ -169,6 +174,8 @@ public class PtGen {
 				UtilLex.messErr(defNom + " n'est defini par aucune procedure");
 			}
 		}
+		
+		
 		desc.ecrireDesc(UtilLex.nomSource);
 	}
 	
@@ -202,7 +209,8 @@ public class PtGen {
 			"contenul  ", "affecterl ", "appel     ", "retour    " };
 
 	private static int old_ipo = 0;
-
+	
+	// Permet d'afficher le code Mnemo au fil de la compilation
 	private static void affMnemoIpo() {
 		if (po.getIpo() > 0) {
 			int diff = po.getIpo() - old_ipo;
@@ -413,9 +421,8 @@ public class PtGen {
 
 		/* DECLARATIONS 30 */
 
-		/* Declaration constante : Ajoute la constante a tabSymb
-		 * consts -> const a=val;{} b=val;{} ...;{}
-		 */
+		// Declaration constante : Ajoute la constante a tabSymb
+		// consts -> const a=val;{} b=val;{} ...;{}
 		case 30:
 			if (presentIdent(bc) != 0) {
 				UtilLex.messErr("Constante " + UtilLex.repId(UtilLex.numId) + " deja declare");
@@ -459,9 +466,8 @@ public class PtGen {
 			}
 			desc.setTailleGlobaux(counter);
 			break;
-		/*
-		 * tCour = type type -> 'ent'{43} | 'bool' {44}
-		 */
+		
+		// tCour = type type -> 'ent'{43} | 'bool' {44}
 		case 34:
 			tCour = ENT;
 			break;
@@ -471,10 +477,8 @@ public class PtGen {
 
 		/* AFFECTATION 40 */
 
-		/*
-		 * On sauvegarde l'id lu au début dans id_save AffOuAppel -> ident {} ( := expr
-		 * | effixes effmodes )
-		 */
+		// On sauvegarde l'id lu au début dans id_save
+		// AffOuAppel -> ident {} ( := expr | effixes effmodes )
 		case 40:
 			id_save = presentIdent(1);
 			if (id_save == 0) {
@@ -482,6 +486,7 @@ public class PtGen {
 			}
 			break;
 
+		// On verifie que l'ident est du meme type que l'expression
 		// AffOuAppel -> ident := expr {}
 		case 41:
 			if (tCour != tabSymb[id_save].type) {
@@ -516,6 +521,7 @@ public class PtGen {
 			}
 			break;
 
+		// Pour des souci de non repetage du code, on rappellera 42 apres d'avoir generer LIRE...	
 		// lecture -> lire ( ident{43}{42}, ident{43}{42}, ...{43}{42} )
 		case 43:
 			id_save = presentIdent(1);
@@ -631,6 +637,12 @@ public class PtGen {
 			break;
 
 		// inscond -> 'fcond' {}
+		// La fin d'une lecture d'une condition peut se passer de 2 manieres
+		// On a lu un 'aut', le dernier element dans la pile sera alors un 0
+		// -> On depile et on fait rien
+		// On a fini sur un cond, le dernier element est alors l'ipo jmp d'un BSIFAUX
+		// -> On depile et on maj bsifaux
+		// Ensuite on remonte le chainage des bincond jusqu'a arriver a 0
 		case 60:
 			a = pileRep.depiler();
 			if (a != 0) { // bsifaux a mettre a jour
@@ -651,6 +663,7 @@ public class PtGen {
 		
 		// Genere un bincond seulement si des procedures existent
 		// ET si on est dans un programme
+		// Empile le jmp du BINCOND en 61 depile en 62
 		// decprocs -> {}(decproc ptvg ) + {depilement,62}
 		case 61:
 			if(desc.getUnite().equals("programme")) {
@@ -667,6 +680,7 @@ public class PtGen {
 			}
 			break;
 		
+		// Ajoute l'ident dans tabSymb et une ligne pour les parametres
 		// decproc -> 'proc' ident {} parfixe? parmod? consts? vars? corps 
 		case 63:
 			a = presentIdent(1);
@@ -680,6 +694,7 @@ public class PtGen {
 			bc = it + 1;
 			break;
 
+		// Ajoute les parametres fixes dans tabSymb
 		// pf -> type ident {} ( ',' ident {} )*
 		case 64:
 			if (presentIdent(bc) != 0) {
@@ -689,6 +704,7 @@ public class PtGen {
 			counter++;
 			break;
 
+		// Ajoute les parametres modulaires dans tabSymb
 		// pm -> type ident {} ( ',' ident {} )*
 		case 65:
 			if (presentIdent(bc) != 0) {
@@ -698,15 +714,18 @@ public class PtGen {
 			counter++;
 			break;
 
+		// Fin de la lecture des parametres
 		// Mise a jour du nombre de param dns tabSymb
 		// decproc -> 'proc' ident parfixe? parmod? {}
 		case 66:
 			tabSymb[it - counter].info = counter;
 			break;
 		
+		// A present on lit les variables locales de la procedure
+		// On initialise notre counter a 0 avec 31
+		// decproc -> 'proc' ident parfixe? parmod? consts? {31} vars? corps	
+			
 		// Produit reserver a la fin de la lecture des variables seulement pour les procedures
-		// Le counter est remis a zero par un appel a cette ligne
-		// decproc -> 'proc' ident parfixe? parmod? consts? {31} vars? corps
 		// vars -> 'var' ( type ident ( ','  ident )* ptvg )+ {}
 		case 67:
 			if(bc > 1) {
@@ -714,7 +733,11 @@ public class PtGen {
 				po.produire(counter);
 			}
 			break;
-				
+		
+		// Fin de la lecture de la procedure	
+		// Generation du RETOUR
+		// Suppression des lignes desormais inutiles dans tabSymb (celles qui correspondent a des varlocales)
+		// Masquage des autres lignes
 		// decproc -> 'proc' ident parfixe? parmod? const? vars? corps {}
 		case 68: 
 			for (int i = it; i >= bc; i--) {
@@ -733,6 +756,7 @@ public class PtGen {
 		
 		/* APPEL PROCEDURE */
 
+		// On verifie qu'on appelle bien une procedure
 		// AffOuAppel -> ident (... | {} (effixes (effmods)?)? )
 		case 70:
 			if (tabSymb[id_save].categorie != PROC) {
@@ -741,6 +765,7 @@ public class PtGen {
 			counter = 0; // Permet de compter le nombre d'arguement
 			break;
 
+		// On lit les arguments fixes et on releve les erreurs
 		// effixes -> '(' (expr {} ( , expr {} )* )? ')'
 		case 71:
 			counter++;
@@ -753,6 +778,8 @@ public class PtGen {
 			}
 			break;
 
+		// On lit les arguments modulables et on releve les erreurs
+		// On genere les instructions d'empilement correspondant aux categories d'arguments
 		// effmods -> '(' (ident {} ( , ident {} )* )? ')'
 		case 72:
 			counter++;
@@ -794,6 +821,9 @@ public class PtGen {
 
 			break;
 
+		// Fin de la lecture de l'appel
+		// On regarde si on a le bon nombre de parametre
+		// Puis on produit APPEL
 		// AffOuAppel -> ident (... | (effixes (effmods)?)? {})
 		case 73:
 			if(counter != tabSymb[id_save+1].info) {
@@ -823,6 +853,7 @@ public class PtGen {
 			desc.setUnite("module");
 			break;
 		
+		// Ajout au descripteur des differentes definitions
 		// partiedef -> 'def' ident {}  (',' ident {} )*
 		case 83:
 			if(desc.presentDef(UtilLex.repId(UtilLex.numId)) != 0) {
@@ -833,6 +864,8 @@ public class PtGen {
 		
 		/* PARTIE REF */
 		
+		// Ajout au descripteur des references
+		// On les place egalement dans tabSymb
 		// specif -> ident {} ( 'fixe' '(' type  ( ',' type  )* ')' )? 
         //          ( 'mod'  '(' type  ( ',' type  )* ')' )? 
 		case 84:
@@ -841,12 +874,12 @@ public class PtGen {
 			}
 			
 			counter = 0;
-			id_save = UtilLex.numId;
-			desc.ajoutRef(UtilLex.repId(id_save));
-			placeIdent(id_save, PROC, NEUTRE, desc.getNbRef());
+			desc.ajoutRef(UtilLex.repId(UtilLex.numId));
+			placeIdent(UtilLex.numId, PROC, NEUTRE, desc.getNbRef());
 			placeIdent(-1, PRIVEE, NEUTRE, counter);
 			break;
 		
+		// On rajoute chaque parametre de la reference dans tabSymb	
 		// specif -> ident ( 'fixe' '(' type {} ( ',' type {} )* ')' )? 
         //          ( 'mod'  '(' type ( ',' type )* ')' )? 
 		case 85:
@@ -861,12 +894,16 @@ public class PtGen {
 			counter++;
 			break;	
 		
+		// On a fini de lire la "declaration" d'une reference, on note son nbParam dans le desc
+		// On met aussi son nbParam dans tabSymb
 		// partieref -> 'ref' specif {} ( ',' specif {}) * 	
 		case 87:
+			// desc.getNbRef() est aussi egale au numero de la derniere reference dans tabRef
 			desc.modifRefNbParam(desc.getNbRef(), counter);
 			tabSymb[it-counter].info = counter;
 			break;
 		
+		// On verifie que le module definit bien des procedures
 		// declarations -> partiedef? {} partieref? ...
 		case 88:
 			if(desc.getUnite().equals("module") && desc.getNbDef() == 0) {

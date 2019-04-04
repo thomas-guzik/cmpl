@@ -33,10 +33,47 @@ public class Edl {
 	
 	static int vTrans[] = new int[MAXOBJ];
 	
-	// J'ai mis po en public, je ne vois pas pourquoi il devrait etre dans une fonction sense
-	// generer un fichier
-	static int[] po = new int[(nMod + 1) * MAXOBJ + 1];
+	
+	// A propos de po et l'implementation qui en resulte :
+	//
+	// D'apres votre propre texte : "On concatene dans po[1..6000], p.obj..."
+	// donc on en deduit que po.length = 6000
+	// Or d'apres votre propre code, po est cree dans constMap avec une taille
+	// taille = (nMod + 1) * MAXOBJ + 1 != 6000
+	// Je me questionne alors sur la vision de l'implementation que vous envisagez
+	//
+	// Pour le cas taille = (nMod + 1) * MAXOBJ + 1
+	// - La seule raison que je vois pour initier po a cette taille est
+	// de lui permettre de prendre moins de memoire
+	// Il serait alors plus judicieux de pousser cette vision plus loin
+	// On peut directement creer po à la taille de la somme de taille de tous
+	// les codes (si on peut creer un tableau qui depend du nombre de fichier
+	// saisi, alors il est possible de creer un po a la taille de la somme de la
+	// taille des codes)
+	//
+	// Pour le cas taille = 6000
+	// - Si on suit la vision developpe pour les autres tableaux, notamment bien
+	// applique pour vTrans, cad une vision disant "comme on ne connait pas la
+	// taille du code qu'on lira, on doit creer vTrans a la taille maximum",
+	// alors de par cette vision, on doit creer po a 6000
 
+	// Quoiqu'il en soit, ces 2 visions semblent etre a l'oeuvre dans ce fichier
+	// A present face a ces 2 choix d'implementations, je n'ai pu me resoudre
+	// a decider lequel je ferais.
+	// Je vous propose donc deux versions,
+	// La premiere sera la version "sur rail", celle qui ne se pose pas la
+	// question du po dans constMap
+	// La seconde sera celle qui s'est pose la question pour po, et qui 
+	// a decide de mettre po a 6000 des le debut
+	// elle sera mis en commentaire a la fin du code ci dessous
+	// Notez que la structure du code sera alors celle ci
+	// static int[] po = new int[6 * MAXOBJ];
+	// concat();
+	// constMap(); 
+	// 
+	// concat n'a plus le besoin d'etre dans constMap() etant donne que 
+	// po est devenu une variable globale
+	
 	// utilitaire de traitement des erreurs
 	// ------------------------------------
 	static void erreur(int te, String m) {
@@ -77,56 +114,6 @@ public class Edl {
 			}	
 		}
 	}
-
-	// Son seul but est de construire le fichier Map, je genere la concatenation avec la fonction
-	// concat() appelle avant constMap()
-	static void constMap() {
-		// f2 = fichier executable .map construit
-		OutputStream f2 = Ecriture.ouvrir(nomsProgMod[0] + ".map");
-		if (f2 == null)
-			erreur(FATALE, "creation du fichier " + nomsProgMod[0]
-					+ ".map impossible");
-		// pour construire le code concatene de toutes les unit�s
-		
-		for (int i = 1; i <= ipo; i++)
-			Ecriture.ecrireStringln(f2, "" + po[i]);
-		
-		Ecriture.fermer(f2);
-		// creation du fichier en mnemonique correspondant
-		Mnemo.creerFichier(ipo, po, nomsProgMod[0] + ".ima");
-	}
-
-	public static void main(String argv[]) {
-		System.out.println("EDITEUR DE LIENS / PROJET LICENCE");
-		System.out.println("---------------------------------");
-		System.out.println("");
-		nbErr = 0;
-		
-		// Phase 1 de l'edition de liens
-		// -----------------------------
-		lireDescripteurs();		// lecture des descripteurs a completer si besoin
-		
-		remplirTransDonEtCode();
-		affTrans(TRANSCODE);
-		affTrans(TRANSDON);
-		remplirDicoDef();
-		affDicoDef();
-		remplirAdFinale();
-		affAdFinale();
-		
-		if (nbErr > 0) {
-			System.out.println("programme executable non produit");
-			System.exit(1);
-		}
-		
-		concat();
-		
-		// Phase 2 de l'edition de liens
-		// -----------------------------
-		constMap();
-		Mnemo.creerFichier(ipo,po, nomsProgMod[0] + ".ima");
-		System.out.println("Edition de liens terminee");
-	}
 	
 	// Remplit TransDon et TransCode en meme temps
 	public static void remplirTransDonEtCode() {
@@ -141,11 +128,6 @@ public class Edl {
 			transCode[i] = counter_ipo;
 			counter_ipo += tabDesc[i].getTailleCode();
 		}
-		// Masquage des dernieres lignes de transDon et transCode
-		for(;i <= MAXMOD; i++) {
-			transDon[i] = -1;
-			transCode[i] = -1;
-		}
 	}
 	
 	// Remplit DicoDef
@@ -154,10 +136,6 @@ public class Edl {
 		String nomProc;
 		int adPo;
 		int nbParam;
-		
-		// Masquage de la premiere ligne, c'est inutile mais je le met dans le doute que ce soit demande
-		// (La logique de ce projet et qu'on masque generalement)
-		dicoDef[0] = tabDesc[0].new EltDef("-1", -1, -1);
 		
 		for(int i = 0; i <= nMod; i++) {
 			
@@ -173,11 +151,6 @@ public class Edl {
 				dicoDef[limit_dico] = tabDesc[0].new EltDef(nomProc, adPo, nbParam);
 				limit_dico++;
 			}
-		}
-		// Masquage des dernieres lignes du tableau, c'est normalement inutile
-		// Mais je le met dans le doute que ce soit demande
-		for(int i = limit_dico; i < (MAXMOD + 1)*MAXDEF; i++) {
-			dicoDef[i] = tabDesc[0].new EltDef("-1", -1, -1);
 		}
 	}
 	
@@ -206,48 +179,6 @@ public class Edl {
 		}
 	}
 	
-	/* Fonction d'affichage des differentes tables */
-	
-	public static void affTrans(int trans) {
-		switch(trans) {
-		case TRANSDON:
-			System.out.println("\nTransDon table:");
-			break;
-		case TRANSCODE:
-			System.out.println("\nTransCode table:");
-			break;
-		}
-		
-		for(int i = 0; i <= nMod; i++) {
-			switch(trans) {
-			case TRANSDON:
-				System.out.print(transDon[i] + " ");
-				break;
-			case TRANSCODE:
-				System.out.print(transCode[i] + " ");
-				break;
-			}
-		}
-		System.out.println();
-	}
-	
-	public static void affDicoDef() {
-		System.out.println("\nDicoDef:\ni\tnomProc\tadPo\tnbParam");
-		for(int i = 1; i < limit_dico; i++) {
-			System.out.println(""+i+"\t"+dicoDef[i].nomProc+"\t"+dicoDef[i].adPo+"\t"+dicoDef[i].nbParam);
-		}
-	}
-	
-	public static void affAdFinale() {
-		System.out.println("\nadFinale table:");
-		for(int i = 0; i <= nMod; i++) {
-			for(int j = 0; j <= tabDesc[i].getNbRef(); j++) {
-				System.out.print(adFinale[i][j]+"\t");
-			}
-			System.out.println();
-		}
-	}
-	
 	// Initie vTrans en mettant toutes ses cases a -1
 	public static void initvTrans() {		
 		for(int i = 0; i < MAXOBJ; i++) {
@@ -256,7 +187,7 @@ public class Edl {
 	}
 	
 	// Concatene le code, je lis en meme temps le code ipo et vTrans
-	public static void concat() {
+	public static void concat(int[] po) {
 		ipo = 0;
 		// Boucle sur tout les fichiers saisi
 		for(int i = 0; i <= nMod; i++) {
@@ -305,4 +236,186 @@ public class Edl {
 		}
 		return sum;
 	}
+
+	static void constMap() {
+		// f2 = fichier executable .map construit
+		OutputStream f2 = Ecriture.ouvrir(nomsProgMod[0] + ".map");
+		if (f2 == null)
+			erreur(FATALE, "creation du fichier " + nomsProgMod[0]
+					+ ".map impossible");
+		// pour construire le code concatene de toutes les unit�s
+		int[] po = new int[(nMod + 1) * MAXOBJ + 1];
+		
+		concat(po);
+		
+		for (int i = 1; i <= ipo; i++)
+			Ecriture.ecrireStringln(f2, "" + po[i]);
+		
+		Ecriture.fermer(f2);
+		// creation du fichier en mnemonique correspondant
+		Mnemo.creerFichier(ipo, po, nomsProgMod[0] + ".ima");
+	}
+	
+	/* Fonction d'affichage des differentes tables */
+	
+	public static void affTrans(int trans) {
+		switch(trans) {
+		case TRANSDON:
+			System.out.println("\nTransDon table:");
+			break;
+		case TRANSCODE:
+			System.out.println("\nTransCode table:");
+			break;
+		}
+		
+		for(int i = 0; i <= nMod; i++) {
+			switch(trans) {
+			case TRANSDON:
+				System.out.print(transDon[i] + " ");
+				break;
+			case TRANSCODE:
+				System.out.print(transCode[i] + " ");
+				break;
+			}
+		}
+		System.out.println();
+	}
+	
+	public static void affDicoDef() {
+		System.out.println("\nDicoDef:\ni\tnomProc\tadPo\tnbParam");
+		for(int i = 1; i < limit_dico; i++) {
+			System.out.println(""+i+"\t"+dicoDef[i].nomProc+"\t"+dicoDef[i].adPo+"\t"+dicoDef[i].nbParam);
+		}
+	}
+	
+	public static void affAdFinale() {
+		System.out.println("\nadFinale table:");
+		for(int i = 0; i <= nMod; i++) {
+			for(int j = 0; j <= tabDesc[i].getNbRef(); j++) {
+				System.out.print(adFinale[i][j]+"\t");
+			}
+			System.out.println();
+		}
+	}
+
+	public static void main(String argv[]) {
+		System.out.println("EDITEUR DE LIENS / PROJET LICENCE");
+		System.out.println("---------------------------------");
+		System.out.println("");
+		nbErr = 0;
+		
+		// Phase 1 de l'edition de liens
+		// -----------------------------
+		lireDescripteurs();		// lecture des descripteurs a completer si besoin
+		
+		remplirTransDonEtCode();
+		affTrans(TRANSCODE);
+		affTrans(TRANSDON);
+		remplirDicoDef();
+		affDicoDef();
+		remplirAdFinale();
+		affAdFinale();
+		
+		if (nbErr > 0) {
+			System.out.println("programme executable non produit");
+			System.exit(1);
+		}
+		
+		// Phase 2 de l'edition de liens
+		// -----------------------------
+		constMap();
+		System.out.println("Edition de liens terminee");
+	}
 }
+
+// Version 2
+/*
+static int[] po = new int[6 * MAXOBJ];
+
+public static void concat() {
+	ipo = 0;
+	// Boucle sur tout les fichiers saisi
+	for(int i = 0; i <= nMod; i++) {
+		// Ouvre le fichier obj 
+		InputStream f = Lecture.ouvrir(nomsProgMod[i] + ".obj");
+		if (f == null) {
+			System.out.println("Fichier " + nomsProgMod[i] + ".obj inexistant");
+			System.exit(1);
+		}
+		
+		// Lecture des elements de vTrans
+		initvTrans();
+		for(int j = 0; j < tabDesc[i].getNbTransExt(); j++) {
+			vTrans[Lecture.lireInt(f)] = Lecture.lireInt(f);
+		}
+		
+		// Lecture du code po, si il y a une modification signale dans vTrans, on a la fait directement
+		for(int j = 1; j <= tabDesc[i].getTailleCode(); j++) {
+			ipo++;
+			
+			switch(vTrans[j]) {
+			case TRANSDON:
+				po[ipo] = Lecture.lireInt(f) + transDon[i];
+				break;
+			case TRANSCODE:
+				po[ipo] = Lecture.lireInt(f) + transCode[i];
+				break;
+			case REFEXT:
+				po[ipo] = adFinale[i][Lecture.lireInt(f)];
+				break;
+			default:
+				po[ipo] = Lecture.lireInt(f); 
+			}
+		}
+		Lecture.fermer(f);
+	}
+
+static void constMap() {
+	// f2 = fichier executable .map construit
+	OutputStream f2 = Ecriture.ouvrir(nomsProgMod[0] + ".map");
+	if (f2 == null)
+		erreur(FATALE, "creation du fichier " + nomsProgMod[0]
+				+ ".map impossible");
+	// pour construire le code concatene de toutes les unit�s
+	int[] po = new int[(nMod + 1) * MAXOBJ + 1];
+	
+	for (int i = 1; i <= ipo; i++)
+		Ecriture.ecrireStringln(f2, "" + po[i]);
+	
+	Ecriture.fermer(f2);
+	// creation du fichier en mnemonique correspondant
+	Mnemo.creerFichier(ipo, po, nomsProgMod[0] + ".ima");
+}
+
+public static void main(String argv[]) {
+	System.out.println("EDITEUR DE LIENS / PROJET LICENCE");
+	System.out.println("---------------------------------");
+	System.out.println("");
+	nbErr = 0;
+	
+	// Phase 1 de l'edition de liens
+	// -----------------------------
+	lireDescripteurs();		// lecture des descripteurs a completer si besoin
+	
+	remplirTransDonEtCode();
+	affTrans(TRANSCODE);
+	affTrans(TRANSDON);
+	remplirDicoDef();
+	affDicoDef();
+	remplirAdFinale();
+	affAdFinale();
+	
+	if (nbErr > 0) {
+		System.out.println("programme executable non produit");
+		System.exit(1);
+	}
+	
+	concat();
+	
+	// Phase 2 de l'edition de liens
+	// -----------------------------
+	constMap();
+	Mnemo.creerFichier(ipo,po, nomsProgMod[0] + ".ima");
+	System.out.println("Edition de liens terminee");
+}
+*/

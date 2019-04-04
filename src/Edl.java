@@ -142,12 +142,11 @@ public class Edl {
 	
 	public static void remplirDicoDef() {
 		limit_dico = 1;
-		Descripteur gen = new Descripteur();
 		String nomProc;
 		int adPo;
 		int nbParam;
 		
-		dicoDef[0] = gen.new EltDef("-1", -1, -1);
+		dicoDef[0] = tabDesc[0].new EltDef("-1", -1, -1);
 		
 		for(int i = 0; i <= nMod; i++) {
 			
@@ -160,12 +159,12 @@ public class Edl {
 					erreur(NONFATALE, nomProc + " doublement defini");
 				}
 				// dicoDef[limit_dico] = (new Descripteur()).new EltDef(nomProc, adPo, nbParam);
-				dicoDef[limit_dico] = gen.new EltDef(nomProc, adPo, nbParam);
+				dicoDef[limit_dico] = tabDesc[0].new EltDef(nomProc, adPo, nbParam);
 				limit_dico++;
 			}
 		}
 		for(int i = limit_dico; i < (MAXMOD + 1)*MAXDEF; i++) {
-			dicoDef[i] = gen.new EltDef("-1", -1, -1);
+			dicoDef[i] = tabDesc[0].new EltDef("-1", -1, -1);
 		}
 	}
 	

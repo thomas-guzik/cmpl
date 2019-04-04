@@ -50,7 +50,7 @@ unitmodule
   ;
   
 declarations
-  : partiedef? {PtGen.pt(88);} partieref? consts? vars? decprocs? 
+  : partiedef? {PtGen.pt(88);} partieref? consts? {PtGen.pt(31);} vars? {PtGen.pt(33);} decprocs? 
   ;
   
 partiedef
@@ -67,17 +67,17 @@ specif  : ident {PtGen.pt(84);} ( 'fixe' '(' type {PtGen.pt(85);} ( ',' type {Pt
 consts  : 'const' ( ident '=' valeur  ptvg {PtGen.pt(30);}  )+ 
   ;
   
-vars  : 'var' ( type ident {PtGen.pt(31);} ( ','  ident {PtGen.pt(31);} )* ptvg  )+ {PtGen.pt(32);}
+vars  : 'var' ( type ident {PtGen.pt(32);} ( ','  ident {PtGen.pt(32);} )* ptvg  )+ {PtGen.pt(67);}
   ;
   
-type  : 'ent'  {PtGen.pt(33);}
-  |     'bool' {PtGen.pt(34);}
+type  : 'ent'  {PtGen.pt(34);}
+  |     'bool' {PtGen.pt(35);}
   ;
   
 decprocs: {PtGen.pt(61);}(decproc ptvg)+ {PtGen.pt(62);}
   ;
   
-decproc :  'proc'  ident {PtGen.pt(63);} parfixe? parmod? {PtGen.pt(66);} consts? vars? corps {PtGen.pt(67);}
+decproc :  'proc'  ident {PtGen.pt(63);} parfixe? parmod? {PtGen.pt(66);} consts? {PtGen.pt(31);} vars? corps {PtGen.pt(68);}
   ;
   
 ptvg  : ';'

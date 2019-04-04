@@ -279,16 +279,16 @@ public class PtGen {
 
 		/* EXPRESSIONS */
 
-		/*
-		 * Empiler une valeur brute primaire -> val {}
+		/* Ajout dans la pile d'execution de la valeur lu
+		 * primaire -> val {}
 		 */
 		case 5: //
 			po.produire(EMPILER);
 			po.produire(vCour);
 			break;
 
-		/*
-		 * Empiler une variable ou constante primaire -> ident {}
+		/* Ajout dans la pile d'execution du contenu de la variable
+		 * primaire -> ident {}
 		 */
 		case 6:
 			a = presentIdent(1);
@@ -413,8 +413,8 @@ public class PtGen {
 
 		/* DECLARATIONS 30 */
 
-		/*
-		 * Declaration constante consts -> const a=val;{} b=val;{} ...;{}
+		/* Declaration constante : Ajoute la constante a tabSymb
+		 * consts -> const a=val;{} b=val;{} ...;{}
 		 */
 		case 30:
 			if (presentIdent(bc) != 0) {
@@ -424,45 +424,48 @@ public class PtGen {
 			}
 			break;
 
-		/*
-		 * Declaration variable vars -> var ent a{}, b{}; bool c{}, ...{}; ent ...{};
-		 */
+		/* Declaration variable : Ajoute la variable dans tabSymb */
+		
+		// Preparation a la lecture des variables, on va devoir compter leur nombre
+		// counter = 0
+		// declarations -> partiedef? partieref? consts? {} vars? decprocs? 
+		// decproc -> 'proc' ident parfixe? parmod? consts? {} vars? corps 
 		case 31:
+			counter = 0;
+			break;
+		
+		// Ajout dans tabSymb des var	
+		// vars -> var ent a{}, b{}; bool c{}, ...{}; ent ...{};
+		case 32:
 			if (presentIdent(bc) != 0) {
 				UtilLex.messErr("Variable " + UtilLex.repId(UtilLex.numId) + " deja declare");
 			}
 
-			if (bc == 1) {
+			if (bc == 1) { // Contexte globale
 				placeIdent(UtilLex.numId, VARGLOBALE, tCour, counter);
-			} else {
-				placeIdent(UtilLex.numId, VARLOCALE, tCour, counter);
+			} else { // Contexte locale
+				placeIdent(UtilLex.numId, VARLOCALE, tCour, counter+tabSymb[bc-1].info+2);
 			}
 			counter++;
 			break;
-		/*
-		 * Reservation de place dans la pile vars -> var (...;)+ {}
-		 * seulement si module == false
-		 */
-		case 32:
+			
+		// Produit RESERVER  seulement si on est dans un programme et a cause de la grammaire
+		// on est dans un contexte globale
+		// declarations -> partiedef? partieref? consts? vars? {} decprocs? 
+		case 33:
 			if(desc.getUnite().equals("programme")) {
 				po.produire(RESERVER);
-				if(bc==1) {
-					po.produire(counter);
-				}
-				else
-					po.produire(counter-tabSymb[bc-1].info-2);
+				po.produire(counter);
 			}
-			if(bc == 1) {
-				desc.setTailleGlobaux(counter);
-			}
+			desc.setTailleGlobaux(counter);
 			break;
 		/*
 		 * tCour = type type -> 'ent'{43} | 'bool' {44}
 		 */
-		case 33:
+		case 34:
 			tCour = ENT;
 			break;
-		case 34:
+		case 35:
 			tCour = BOOL;
 			break;
 
@@ -475,7 +478,7 @@ public class PtGen {
 		case 40:
 			id_save = presentIdent(1);
 			if (id_save == 0) {
-				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " non declare");
+				UtilLex.messErr("Affectation : " + UtilLex.repId(UtilLex.numId) + " non declare");
 			}
 			break;
 
@@ -515,7 +518,7 @@ public class PtGen {
 
 		// lecture -> lire ( ident{43}{42}, ident{43}{42}, ...{43}{42} )
 		case 43:
-			id_save = presentIdent(bc);
+			id_save = presentIdent(1);
 			if (id_save == 0) {
 				UtilLex.messErr(UtilLex.repId(UtilLex.numId) + " non declare");
 			}
@@ -645,7 +648,9 @@ public class PtGen {
 		/* PROCEDURES */
 
 		/* GESTION BINCOND DEBUT PROCEDURE */
-			
+		
+		// Genere un bincond seulement si des procedures existent
+		// ET si on est dans un programme
 		// decprocs -> {}(decproc ptvg ) + {depilement,62}
 		case 61:
 			if(desc.getUnite().equals("programme")) {
@@ -662,7 +667,7 @@ public class PtGen {
 			}
 			break;
 		
-		// decproc -> 'proc' ident {}
+		// decproc -> 'proc' ident {} parfixe? parmod? consts? vars? corps 
 		case 63:
 			a = presentIdent(1);
 			if (a != 0 && tabSymb[a].categorie == PROC) {
@@ -697,11 +702,21 @@ public class PtGen {
 		// decproc -> 'proc' ident parfixe? parmod? {}
 		case 66:
 			tabSymb[it - counter].info = counter;
-			counter += 2;
 			break;
-			
+		
+		// Produit reserver a la fin de la lecture des variables seulement pour les procedures
+		// Le counter est remis a zero par un appel a cette ligne
+		// decproc -> 'proc' ident parfixe? parmod? consts? {31} vars? corps
+		// vars -> 'var' ( type ident ( ','  ident )* ptvg )+ {}
+		case 67:
+			if(bc > 1) {
+				po.produire(RESERVER);
+				po.produire(counter);
+			}
+			break;
+				
 		// decproc -> 'proc' ident parfixe? parmod? const? vars? corps {}
-		case 67: 
+		case 68: 
 			for (int i = it; i >= bc; i--) {
 				if (tabSymb[i].categorie == VARLOCALE || tabSymb[i].categorie == CONSTANTE) {
 					tabSymb[i] = null; it--;
